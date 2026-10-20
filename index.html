@@ -112,6 +112,29 @@ h1{margin:0;font:800 clamp(38px,10vw,74px)/1 var(--display);letter-spacing:.03em
 .btn{flex:1;min-width:130px;height:46px;border-radius:8px;border:1px solid var(--line);background:#16242a;color:var(--fg);font:600 16px var(--ui);letter-spacing:.06em;cursor:pointer}
 .btn.gold{background:linear-gradient(#f0c35e,#c88d24);border-color:#f3d07c;color:#1d1405}
 .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chip.pop{animation:pop .3s}
+@keyframes pop{50%{transform:scale(1.12);border-color:var(--gold)}}
+#shop .panel{max-width:560px}
+.shead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.shead>div:first-child{display:grid;gap:6px}
+.purse{display:flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--line);border-radius:18px;background:#0d171a;font:700 22px var(--ui);color:var(--gold);font-variant-numeric:tabular-nums}
+.purse .coin{width:16px;height:16px}
+.shopg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.offer{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:30px minmax(0,1fr);gap:2px 10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px;background:#111c20;text-align:left;transition:border-color .15s}
+.offer svg{grid-row:span 3;width:28px;height:28px;fill:none;stroke:var(--oc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.offer b{font:600 16px/1.1 var(--ui);color:var(--fg)}
+.offer em{font-style:normal;font-weight:600;font-size:12px;color:var(--oc);letter-spacing:.06em}
+.offer small{font:500 13px/1.25 var(--ui);color:var(--muted)}
+.offer .pr{display:flex;align-items:center;gap:5px;font:700 15px var(--ui);color:var(--gold);font-variant-numeric:tabular-nums}
+.offer[aria-disabled="true"]{opacity:.5;cursor:default}
+.offer[aria-disabled="true"] .pr{color:#ff8a80}
+.offer:not([aria-disabled="true"]):hover{border-color:var(--oc)}
+.offer:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.offer.bought{animation:buy .35s}
+@keyframes buy{40%{transform:scale(.95);border-color:var(--gold);background:#1d2a1f}}
+.slog{min-height:20px;margin:0;font:500 14.5px/1.35 var(--ui);color:var(--muted)}
+.slog small{margin-left:6px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.offer.bought,.chip.pop{animation:none}}
 @media (prefers-reduced-motion:reduce){#banner.show{animation:fade 2.4s linear forwards}.toast,.sbtn.deny{animation:none}.card{transition:none}}
 </style>
 
@@ -150,9 +173,9 @@ h1{margin:0;font:800 clamp(38px,10vw,74px)/1 var(--display);letter-spacing:.03em
   <div class="mwrap">
     <p class="eyebrow">A pocket action RPG</p>
     <h1>Ember Realms</h1>
-    <p class="lead">Pick a hero, survive the waves, loot better gear, and topple a boss every fifth wave.</p>
+    <p class="lead">Pick a hero, survive the waves, spend your gold at camp, and topple a boss every fifth wave.</p>
     <div class="cards" id="cards"></div>
-    <p class="how"><b>Phone:</b> drag the left side of the screen to move, hold the sword to attack, tap the three skills. <b>Keyboard:</b> WASD to move, Space to attack, 1 2 3 for skills, Q for a potion, P to pause.</p>
+    <p class="how"><b>Phone:</b> drag the left side of the screen to move, hold the sword to attack, tap the three skills. Gold you collect buys upgrades at the campfire after each wave. <b>Keyboard:</b> WASD to move, Space to attack, 1 2 3 for skills, Q for a potion, P to pause.</p>
     <p class="best" id="best"></p>
   </div>
 </div>
@@ -163,6 +186,15 @@ h1{margin:0;font:800 clamp(38px,10vw,74px)/1 var(--display);letter-spacing:.03em
     <h2 id="ovT">Wave 1</h2>
     <dl class="stats" id="ovS"></dl>
     <div class="row"><button class="btn gold" id="again">Rise again</button><button class="btn" id="change">Choose hero</button></div>
+  </div>
+</div>
+
+<div id="shop" class="ov" hidden>
+  <div class="panel">
+    <div class="shead"><div><p class="eyebrow" id="shopEy">Wave 1 cleared</p><h2>Campfire</h2></div><div class="purse" aria-label="Gold"><span class="coin"></span><span id="purse">0</span></div></div>
+    <div class="shopg" id="offers"></div>
+    <p class="slog" id="slog"></p>
+    <div class="row"><button class="btn gold" id="fight">Fight wave 2</button></div>
   </div>
 </div>
 
@@ -204,7 +236,12 @@ const ICON={
  blink:'M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z',
  fan:'M12 21L5 6M12 21V4M12 21l7-15',
  dash:'M4 6l6 6-6 6M12 6l6 6-6 6',
- vanish:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM4 4l16 16'
+ vanish:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM4 4l16 16',
+ chest:'M3 10h18v10H3zM3 10l2-5h14l2 5M10 13h4v3h-4z',
+ heart:'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+ crit:'M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+ wisp:'M12 4a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM5 9c-2-1-3 1-2 3M19 9c2-1 3 1 2 3M10 18l2 3 2-3',
+ rest:'M4 20h16M7 20l5-9 5 9M12 11c-2-2-2-4 0-7 2 3 2 5 0 7z'
 };
 const svg=k=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k]}"/></svg>`;
 
@@ -259,6 +296,7 @@ function genWorld(){const rocks=[],fires=[];
 
 function calc(){const p=S.p,c=S.c,L=p.lvl-1;let atk=c.atk+L*2.4,def=c.def+L*.7,hp=c.hp+L*15,mp=c.mp+L*6,crit=S.cls==='rogue'?15:5;
  for(const k in p.gear){const g=p.gear[k];if(g){atk+=g.atk;def+=g.def;hp+=g.hp;crit+=g.crit}}
+ const u=p.up;atk+=u.atk*4;def+=u.def*3;hp+=u.hp*25;crit+=u.crit*3;
  return{atk,def,maxHp:hp,maxMp:mp,crit:Math.min(crit,75),spd:c.spd}}
 
 function genGear(ilvl,minR){const roll=Math.random();let ri=roll<.03?3:roll<.14?2:roll<.42?1:0;ri=Math.max(ri,minR||0);
@@ -291,24 +329,24 @@ function toast(html,col){const tl=$('#toasts'),d=document.createElement('div');d
 
 // ---------- run lifecycle
 function newRun(cls){const c=CL[cls],w=genWorld();
- S={cls,c,t:0,wave:0,waveActive:false,interT:1.2,toSpawn:0,spawnT:0,gold:0,kills:0,shake:0,over:false,paused:false,boss:null,
-  p:{x:WORLD/2,y:WORLD/2,r:15,hp:c.hp,mp:c.mp,lvl:1,xp:0,face:Math.PI/2,atkT:0,cds:[0,0,0],buff:{shield:0,vanish:0,crit:0},inv:0,dash:null,swing:0,spin:0,hurtT:0,potT:0,pots:3,moving:false,gear:{weapon:null,armor:null,ring:null}},
+ S={cls,c,t:0,wave:0,waveActive:false,interT:1.2,vac:0,shop:false,earned:0,toSpawn:0,spawnT:0,gold:0,kills:0,shake:0,over:false,paused:false,boss:null,
+  p:{x:WORLD/2,y:WORLD/2,r:15,hp:c.hp,mp:c.mp,lvl:1,xp:0,face:Math.PI/2,atkT:0,cds:[0,0,0],buff:{shield:0,vanish:0,crit:0},inv:0,dash:null,swing:0,spin:0,hurtT:0,potT:0,pots:3,moving:false,up:{atk:0,def:0,hp:0,crit:0,pet:0},gear:{weapon:null,armor:null,ring:null}},
   pet:{x:WORLD/2-30,y:WORLD/2-40,cd:1,t:0},en:[],pr:[],fx:[],loot:[],tx:[],rocks:w.rocks,fires:w.fires};
  S.st=calc();buildPad();
  const pg=$('#porc').getContext('2d');pg.setTransform(1,0,0,1,0,0);pg.clearRect(0,0,104,104);pg.setTransform(2.2,0,0,2.2,0,0);drawHero(pg,23.6,40,cls,Math.PI/2,0,{});
 }
-function start(k){lastCls=k;newRun(k);menuOpen=false;['#menu','#over','#pausem'].forEach(s=>$(s).hidden=true);$('#hud').hidden=false;$('#pad').hidden=false;$('#toasts').innerHTML='';wake()}
-function toMenu(){S=null;menuOpen=true;atkHeld=false;joy=null;['#over','#pausem','#hud','#pad','#bossbar'].forEach(s=>$(s).hidden=true);buildMenu();$('#menu').hidden=false}
+function start(k){lastCls=k;newRun(k);menuOpen=false;['#menu','#over','#pausem','#shop'].forEach(s=>$(s).hidden=true);$('#hud').hidden=false;$('#pad').hidden=false;$('#toasts').innerHTML='';wake()}
+function toMenu(){S=null;menuOpen=true;atkHeld=false;joy=null;['#over','#pausem','#shop','#hud','#pad','#bossbar'].forEach(s=>$(s).hidden=true);buildMenu();$('#menu').hidden=false}
 async function wake(){try{if(navigator.wakeLock&&!wl){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>wl=null)}}catch(e){}}
 
-function togglePause(force){if(!S||S.over)return;S.paused=force===undefined?!S.paused:force;atkHeld=false;joy=null;
+function togglePause(force){if(!S||S.over||S.shop)return;S.paused=force===undefined?!S.paused:force;atkHeld=false;joy=null;
  if(S.paused){$('#gearL').innerHTML=['weapon','armor','ring'].map(sl=>{const g=S.p.gear[sl];return `<div class="gear"><span class="slot">${sl}</span>${g?`<b style="color:${RAR[g.r].c}">${g.name}</b><small>${RAR[g.r].n} · ${statLine(g)}</small>`:'<b class="none">Empty</b><small>Kill enemies to find gear</small>'}</div>`}).join('');
   const st=S.st;$('#stL').innerHTML=dl([['Attack',Math.round(st.atk)],['Defense',Math.round(st.def)],['Max health',Math.round(st.maxHp)],['Crit chance',Math.round(st.crit)+'%'],['Level',S.p.lvl],['Wave',S.wave]])}
  $('#pausem').hidden=!S.paused}
 
 function gameOver(){S.over=true;atkHeld=false;joy=null;const best=+(store.get('ember.best')||0);if(S.wave>best)store.set('ember.best',S.wave);
  part(S.p.x,S.p.y,S.c.col,40,200,1,5);S.shake=12;
- setTimeout(()=>{if(!S)return;$('#ovT').textContent='Fell on wave '+S.wave;$('#ovS').innerHTML=dl([['Hero',`${S.c.name}, level ${S.p.lvl}`],['Enemies slain',S.kills],['Gold earned',S.gold],['Best wave',Math.max(best,S.wave)]]);$('#over').hidden=false;$('#pad').hidden=true},1100)}
+ setTimeout(()=>{if(!S)return;$('#ovT').textContent='Fell on wave '+S.wave;$('#ovS').innerHTML=dl([['Hero',`${S.c.name}, level ${S.p.lvl}`],['Enemies slain',S.kills],['Gold earned',S.earned],['Best wave',Math.max(best,S.wave)]]);$('#over').hidden=false;$('#pad').hidden=true},1100)}
 
 // ---------- input
 C.addEventListener('pointerdown',e=>{if(!S||S.paused||S.over)return;if(e.clientX<W*.6&&!joy){joy={id:e.pointerId,sx:e.clientX,sy:e.clientY,x:e.clientX,y:e.clientY};try{C.setPointerCapture(e.pointerId)}catch(_){}}});
@@ -326,7 +364,9 @@ $('#resume').addEventListener('click',()=>togglePause(false));
 $('#quit').addEventListener('click',toMenu);
 $('#again').addEventListener('click',()=>start(lastCls));
 $('#change').addEventListener('click',toMenu);
+$('#fight').addEventListener('click',()=>closeShop());
 window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(!S)return;if(k===' '){e.preventDefault()}
+ if(S.shop){if(k==='enter'){e.preventDefault();closeShop()}return}
  if(k==='p'||k==='escape'){togglePause();return}if(S.paused||S.over)return;
  if(k===' '||k==='j')atkHeld=true;if(k==='1'||k==='k')useSkill(0);if(k==='2'||k==='l')useSkill(1);if(k==='3'||k==='i')useSkill(2);if(k==='q')drinkPot()});
 window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();keys[k]=false;if(k===' '||k==='j')atkHeld=false});
@@ -403,18 +443,50 @@ function startWave(){S.wave++;S.waveActive=true;const boss=S.wave%5===0;S.toSpaw
  else banner('Wave '+S.wave,S.wave===1?'Hold the sword to attack':'')}
 function dropLoot(x,y,type,val){const a=rnd(0,TAU),s=rnd(60,170);S.loot.push({x,y,type,val:typeof val==='number'?val:0,item:typeof val==='object'?val:null,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:0})}
 function killEnemy(e){e.dead=true;S.kills++;const d=EN[e.type];gainXp(e.xp);part(e.x,e.y,d.col,d.boss?60:14,d.boss?260:140,.7,d.boss?6:4);
- const g=Math.round(rnd(d.gold[0],d.gold[1])*(1+S.wave*.12));dropLoot(e.x,e.y,'gold',g);
+ const g=Math.round(rnd(d.gold[0],d.gold[1])*2*(1+S.wave*.15));dropLoot(e.x,e.y,'gold',g);
  if(d.boss){for(let i=0;i<4;i++)dropLoot(e.x,e.y,'gold',Math.round(g/4));dropLoot(e.x,e.y,'pot');dropLoot(e.x,e.y,'pot');dropLoot(e.x,e.y,'gear',genGear(S.wave+2,2));S.boss=null;banner(e.name+' falls','Grab the loot');S.shake=14}
  else{if(Math.random()<(e.type==='brute'?.25:.06))dropLoot(e.x,e.y,'gear',genGear(S.wave));if(Math.random()<.08)dropLoot(e.x,e.y,'pot')}}
 function gainXp(x){const p=S.p;p.xp+=x;let up=false;while(p.xp>=need(p.lvl)){p.xp-=need(p.lvl);p.lvl++;up=true}
  if(up){S.st=calc();p.hp=S.st.maxHp;p.mp=S.st.maxMp;S.fx.push({k:'lvl',x:p.x,y:p.y+14,t:0,life:1.1});S.fx.push({k:'ring',x:p.x,y:p.y,r:120,t:0,life:.7,col:'#e8b44a',w:8});banner('Level '+p.lvl,'Stronger, and fully restored')}}
 function pickup(l){l.dead=true;const p=S.p;
- if(l.type==='gold'){S.gold+=l.val;txt(l.x,l.y-12,'+'+l.val,'#e8b44a')}
+ if(l.type==='gold'){S.gold+=l.val;S.earned+=l.val;txt(l.x,l.y-12,'+'+l.val,'#e8b44a');popGold()}
  else if(l.type==='pot'){if(p.pots<9){p.pots++;txt(l.x,l.y-12,'+1 potion','#ff8a80')}else{S.gold+=10;txt(l.x,l.y-12,'+10','#e8b44a')}}
- else{const it=l.item,R=RAR[it.r],cur=p.gear[it.slot];
-  if(score(it)>score(cur)){const ratio=p.hp/S.st.maxHp;p.gear[it.slot]=it;S.st=calc();p.hp=Math.min(S.st.maxHp,Math.max(p.hp,ratio*S.st.maxHp));
-   toast(`<b style="color:${R.c}">${it.name}</b><small>${R.n} ${it.slot} equipped · ${statLine(it)}</small>`,R.c);part(p.x,p.y,R.c,18,120,.7,4)}
-  else{const v=Math.round(score(it)*1.5+5);S.gold+=v;toast(`<b style="color:${R.c}">${it.name}</b><small>Weaker than yours · sold for ${v} gold</small>`,'#3a4a50')}}}
+ else{const r=takeGear(l.item);toast(r.html,r.col);if(r.eq)part(p.x,p.y,RAR[l.item.r].c,18,120,.7,4)}}
+function takeGear(it){const p=S.p,R=RAR[it.r],cur=p.gear[it.slot];
+ if(score(it)>score(cur)){const ratio=p.hp/S.st.maxHp;p.gear[it.slot]=it;S.st=calc();p.hp=Math.min(S.st.maxHp,Math.max(p.hp,ratio*S.st.maxHp));
+  return{eq:1,col:R.c,html:`<b style="color:${R.c}">${it.name}</b><small>${R.n} ${it.slot} equipped · ${statLine(it)}</small>`}}
+ const v=Math.round(score(it)*1.5+5);S.gold+=v;S.earned+=v;return{eq:0,col:'#3a4a50',html:`<b style="color:${R.c}">${it.name}</b><small>Weaker than yours · sold for ${v} gold</small>`}}
+function popGold(){const c=E.gold.parentElement;c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')}
+
+// ---------- campfire shop
+const upc=(k,b)=>Math.round(b*Math.pow(1.45,S.p.up[k]));
+const OFFERS=[
+ {id:'pot',ic:'potion',oc:'#ff8a80',n:'Health Potion',d:'Heals 45% of max health',cost:()=>15+S.wave*3,ok:()=>S.p.pots<9||'Bag full',buy:()=>{S.p.pots++}},
+ {id:'rest',ic:'rest',oc:'#ffb04a',n:'Rest by the Fire',d:'Refill health and mana',cost:()=>12+S.wave*4,ok:()=>(S.p.hp<S.st.maxHp-1||S.p.mp<S.st.maxMp-1)||'Already full',buy:()=>{S.p.hp=S.st.maxHp;S.p.mp=S.st.maxMp}},
+ {id:'atk',lv:'atk',ic:'sword',oc:'#e8b44a',n:'Sharpen',d:'+4 attack this run',cost:()=>upc('atk',40),buy:()=>{S.p.up.atk++}},
+ {id:'def',lv:'def',ic:'shield',oc:'#78beff',n:'Reinforce',d:'+3 defense this run',cost:()=>upc('def',35),buy:()=>{S.p.up.def++}},
+ {id:'hp',lv:'hp',ic:'heart',oc:'#ef5a50',n:'Vitality',d:'+25 max health this run',cost:()=>upc('hp',35),buy:()=>{S.p.up.hp++;S.p.hp+=25}},
+ {id:'crit',lv:'crit',ic:'crit',oc:'#ffd25a',n:'Keen Eye',d:'+3% critical hit chance',cost:()=>upc('crit',45),ok:()=>S.st.crit<75||'Maxed',buy:()=>{S.p.up.crit++}},
+ {id:'pet',lv:'pet',ic:'wisp',oc:'#ffe7a8',n:'Train Wisp',d:'Pet hits harder, shoots faster',cost:()=>upc('pet',60),ok:()=>S.p.up.pet<8||'Fully trained',buy:()=>{S.p.up.pet++}},
+ {id:'chest',ic:'chest',oc:'#c07bff',n:'Gear Chest',d:'One item, Rare or better',cost:()=>80+S.wave*15,buy:()=>takeGear(genGear(S.wave+1,1)).html}
+];
+function renderShop(){$('#purse').textContent=S.gold;const g=$('#offers');g.innerHTML='';
+ for(const o of OFFERS){const c=o.cost(),ok=o.ok?o.ok():true,can=ok===true&&S.gold>=c,b=document.createElement('button');
+  b.className='offer';b.id='of-'+o.id;b.style.setProperty('--oc',o.oc);b.setAttribute('aria-disabled',can?'false':'true');
+  const lv=o.lv&&S.p.up[o.lv]?` <em>LV ${S.p.up[o.lv]}</em>`:'';
+  b.innerHTML=`${svg(o.ic)}<b>${o.n}${lv}</b><small>${o.d}</small><span class="pr">${ok===true?`<span class="coin"></span>${c}`:ok}</span>`;
+  b.addEventListener('click',()=>buy(o));g.appendChild(b)}}
+function buy(o){const c=o.cost(),ok=o.ok?o.ok():true,sl=$('#slog');
+ if(ok!==true){sl.textContent=o.n+': '+ok.toLowerCase()+'.';return}
+ if(S.gold<c){sl.textContent=`You need ${c-S.gold} more gold for ${o.n}.`;return}
+ S.gold-=c;const r=o.buy();S.st=calc();const p=S.p;p.hp=Math.min(p.hp,S.st.maxHp);p.mp=Math.min(p.mp,S.st.maxMp);
+ renderShop();const b=$('#of-'+o.id);if(b){b.classList.add('bought');b.focus({preventScroll:true})}
+ if(r)sl.innerHTML=r;else sl.textContent=o.n+(o.lv?` is now level ${p.up[o.lv]}.`:' bought.')}
+function openShop(){S.vac=0;S.shop=true;atkHeld=false;joy=null;const nx=S.wave+1,boss=nx%5===0;
+ $('#shopEy').textContent=`Wave ${S.wave} cleared`;$('#fight').textContent=`Fight wave ${nx}`+(boss?' (boss)':'');
+ $('#slog').textContent=boss?'A boss guards the next wave. Spend wisely.':'Spend your gold, then head back out.';
+ renderShop();$('#shop').hidden=false;$('#pad').hidden=true}
+function closeShop(){if(!S||!S.shop)return;S.shop=false;S.interT=.8;$('#shop').hidden=true;$('#pad').hidden=false}
 
 // ---------- update
 function tickFx(dt){for(const f of S.fx){f.t+=dt;if(f.k==='p'){f.x+=f.vx*dt;f.y+=f.vy*dt;const d=1-Math.min(1,dt*3);f.vx*=d;f.vy*=d}}
@@ -434,7 +506,7 @@ function update(dt){S.t+=dt;const p=S.p;S.st=calc();const st=S.st;
  p.atkT-=dt;if(atkHeld&&p.atkT<=0&&!p.dash){doAttack();p.atkT=S.c.cd}
  // pet
  const pt=S.pet;pt.t+=dt;const tx=p.x-Math.cos(p.face)*30,ty=p.y-Math.sin(p.face)*30-22;pt.x+=(tx-pt.x)*Math.min(1,dt*5);pt.y+=(ty-pt.y)*Math.min(1,dt*5);
- pt.cd-=dt;if(pt.cd<=0){const e=nearestEnemy(pt,340);if(e){pt.cd=1.1;S.pr.push(proj(pt.x,pt.y,ang(pt,e),520,st.atk*.35,5,'#ffd56b','pet',.9,{pet:true,kb:20}))}else pt.cd=.2}
+ pt.cd-=dt;if(pt.cd<=0){const e=nearestEnemy(pt,340);if(e){pt.cd=1.1*Math.pow(.85,p.up.pet);S.pr.push(proj(pt.x,pt.y,ang(pt,e),520,st.atk*.35*(1+.35*p.up.pet),5,'#ffd56b','pet',.9,{pet:true,kb:20}))}else pt.cd=.2}
  // enemies
  const hidden=p.buff.vanish>0;
  for(const e of S.en){if(e.dead)continue;const d=EN[e.type];e.t+=dt;e.hitCd-=dt;e.flash-=dt;e.slow-=dt;
@@ -463,13 +535,13 @@ function update(dt){S.t+=dt;const p=S.p;S.st=calc();const st=S.st;
  S.pr=S.pr.filter(b=>!b.dead);S.en=S.en.filter(e=>!e.dead);
  // loot
  for(const l of S.loot){l.t+=dt;const dmp=Math.pow(.01,dt);l.x+=l.vx*dt;l.y+=l.vy*dt;l.vx*=dmp;l.vy*=dmp;const d=dist(l,p);
-  if(l.t>.4&&d<95){const a=ang(l,p),s=(1-d/95)*520+120;l.x+=Math.cos(a)*s*dt;l.y+=Math.sin(a)*s*dt}
+  if(l.t>.4&&(d<120||S.vac>0)){const a=ang(l,p),s=S.vac>0?Math.max(700,d*3):(1-d/120)*520+120;l.x+=Math.cos(a)*s*dt;l.y+=Math.sin(a)*s*dt}
   if(l.t>.4&&dist(l,p)<p.r+10)pickup(l)}
  S.loot=S.loot.filter(l=>!l.dead);
  // waves
- if(!S.waveActive){S.interT-=dt;if(S.interT<=0)startWave()}
+ if(!S.waveActive){if(S.vac>0){S.vac-=dt;if(S.vac<=0||(S.loot.length===0&&S.vac<1.4))openShop()}else{S.interT-=dt;if(S.interT<=0)startWave()}}
  else if(S.toSpawn>0){S.spawnT-=dt;if(S.spawnT<=0&&S.en.length<10+S.wave){const pos=spawnPos(430);spawnEnemy(pickType(),pos.x,pos.y);S.toSpawn--;S.spawnT=rnd(.35,.8)}}
- else if(S.en.length===0){S.waveActive=false;S.interT=3.2;p.hp=Math.min(st.maxHp,p.hp+st.maxHp*.15);banner('Wave '+S.wave+' cleared',(S.wave+1)%5===0?'A boss guards the next wave':'Next wave incoming')}
+ else if(S.en.length===0){S.waveActive=false;S.vac=2.2;p.hp=Math.min(st.maxHp,p.hp+st.maxHp*.15);banner('Wave '+S.wave+' cleared','Heading to camp')}
  tickFx(dt)}
 
 // ---------- drawing
@@ -600,7 +672,7 @@ function ui(){const p=S.p,st=S.st;
  if(S.boss&&!S.boss.dead){E.bb.hidden=false;E.bossF.style.width=(Math.max(0,S.boss.hp)/S.boss.max*100)+'%';E.bossName.textContent=S.boss.name}else E.bb.hidden=true}
 
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;menuT+=dt;
- if(S){if(!S.paused&&!S.over)update(dt);else if(S.over)tickFx(dt)}
+ if(S){if(!S.paused&&!S.over&&!S.shop)update(dt);else if(S.over)tickFx(dt)}
  draw();if(S)ui();if(menuOpen)drawPreviews();requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 })();
